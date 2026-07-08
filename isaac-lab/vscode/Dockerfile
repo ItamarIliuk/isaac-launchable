@@ -12,7 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM nvcr.io/nvidia/isaac-lab:2.3.0
+FROM nvcr.io/nvidia/isaac-lab:3.0.0-beta2-post1
+
+USER root
 
 RUN apt update && \
     apt install -y \
@@ -32,29 +34,28 @@ RUN apt update && \
 
 ENV WORKSPACE_DIR=/workspace
 
-COPY --chown=isaac-sim:isaac-sim ./README.md ${WORKSPACE_DIR}/README.md
-COPY --chown=isaac-sim:isaac-sim ./settings.json ${WORKSPACE_DIR}/.vscode/settings.json
+COPY --chown=isaaclab:isaaclab ./README.md ${WORKSPACE_DIR}/README.md
+COPY --chown=isaaclab:isaaclab ./settings.json ${WORKSPACE_DIR}/.vscode/settings.json
 
+USER isaaclab:isaaclab
 
 RUN code-server \
     --install-extension ms-python.python \
     --install-extension ms-toolsai.jupyter \
     --force ${WORKSPACE_DIR}
 
+USER root
+
 COPY entrypoint.sh /entrypoint.sh
 
 # OV Cache Directories
-RUN mkdir -p /home/isaac-sim/.cache/ov
-RUN mkdir -p /home/isaac-sim/.local/share/ov
+RUN mkdir -p /root/.cache/ov
+RUN mkdir -p /root/.local/share/ov
 
-# Fix permissions for ubuntu user
-RUN chown -R isaac-sim /workspace /home/isaac-sim/.cache/ov /home/isaac-sim/.local/share/ov /isaac-sim/kit/cache
+# Fix permissions for isaaclab user
+RUN chown -R isaaclab:isaaclab /workspace /root/.cache/ov /root/.local/share/ov /isaac-sim/kit/cache
 
-# Copy bashrc to get aliases
-RUN cp /root/.bashrc /isaac-sim/.root-bashrc
-RUN echo 'source $HOME/.root-bashrc' >> /isaac-sim/.bashrc
-
-USER isaac-sim:isaac-sim
+USER isaaclab:isaaclab
 
 ENTRYPOINT ["/bin/bash"]
 
